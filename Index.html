@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Delta Studio Video Entry</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --accent-blue:#1976d2;
+      --accent-green:#2e7d32;
+      --accent-pink:#d81b60;
+      --text:#212121;
+      --light-bg:#f1f8e9;
+    }
+    body{font-family:'Segoe UI', Tahoma, Arial, sans-serif;background:#e3f2fd;margin:0;padding:20px;color:var(--text);}
+    form{background:#fff;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-width:720px;margin:20px auto;overflow:hidden;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(-20px);}to{opacity:1;transform:translateY(0);}}
+    .form-header{background:var(--light-bg);padding:20px;display:flex;align-items:center;justify-content:center;gap:20px;animation:fadeIn 1s ease-out;}
+    .form-header img{max-width:100px;height:auto;}
+    .form-title{font-size:34px;font-weight:800;color:var(--accent-blue);text-transform:uppercase;letter-spacing:2px;margin:0;}
+    .form-body{padding:25px;}
+    .field{margin-top:12px;}
+    label{font-weight:600;display:block;margin-bottom:6px;color:var(--accent-blue);}
+    input,select{
+      width:100%;
+      padding:10px;
+      border:2px solid #90caf9;
+      border-radius:6px;
+      font-size:14px;
+      background:#fafafa;
+      color:var(--text);
+      transition:border-color 0.3s, box-shadow 0.3s;
+    }
+    input:hover, select:hover, input:focus, select:focus {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 10px rgba(25, 118, 210, 0.6);
+      outline: none;
+    }
+    .actions{display:flex;gap:12px;justify-content:flex-end;margin-top:18px;}
+    button{padding:10px 18px;border:none;border-radius:6px;font-size:14px;cursor:pointer;transition:0.3s;}
+    .btn-reset{background:var(--accent-pink);color:#fff;}
+    .btn-submit{background:var(--accent-green);color:#fff;}
+    table{width:95%;margin:28px auto;border-collapse:collapse;background:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.08);}
+    thead th{background:var(--accent-blue);color:#fff;font-weight:700;font-size:16px;padding:12px;text-align:center;text-transform:uppercase;}
+    tbody td{border:1px solid #ddd;padding:12px;text-align:center;color:var(--text);}
+    tbody tr:nth-child(even){background:#f9f9f9;}
+    .btn-edit{background:#ff9800;color:#fff;padding:6px 10px;border-radius:6px;}
+    .btn-save{background:#0288d1;color:#fff;padding:6px 10px;border-radius:6px;margin-left:6px;}
+    .btn-delete{background:#c62828;color:#fff;padding:6px 10px;border-radius:6px;margin-left:6px;}
+    .btn-reset:hover, .btn-reset:focus,
+    .btn-submit:hover, .btn-submit:focus,
+    .btn-edit:hover, .btn-edit:focus,
+    .btn-save:hover, .btn-save:focus,
+    .btn-delete:hover, .btn-delete:focus {
+      box-shadow: 0 0 12px rgba(25, 118, 210, 0.6);
+      outline: none;
+    }
+    .dirty-row { background-color: #fff3e0; } /* highlight dirty rows */
+  </style>
+</head>
+<body>
+
+  <!-- Form -->
+  <form id="videoForm">
+    <div class="form-header">
+      <img src="logo.png" alt="Delta-Tech Logo">
+      <h2 class="form-title">Delta Studio Video Entry</h2>
+    </div>
+    <div class="form-body">
+      <div class="field"><label>Project Type</label>
+        <select name="projectType" required>
+          <option value="Video">Video</option>
+          <option value="Graphics">Graphics</option>
+        </select>
+      </div>
+      <div class="field"><label>Project Name</label><input type="text" name="projectName" required></div>
+      <div class="field"><label>Starting Date</label><input type="date" name="startDate" required></div>
+      <div class="field"><label>Video Duration</label><input type="text" name="duration" required></div>
+      <div class="field"><label>Remarks</label><input type="text" name="remarks"></div>
+      <div class="field"><label>Editor Name</label><input type="text" name="editorName" value="Tek Bohara" readonly></div>
+      <div class="actions">
+        <button type="reset" class="btn-reset">Reset</button>
+        <button type="submit" class="btn-submit">Submit</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <table id="entryTable">
+    <thead>
+      <tr>
+        <th>S.N.</th><th>Project Type</th><th>Project Name</th><th>Start Date</th>
+        <th>Duration</th><th>Remarks</th><th>Editor</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById('videoForm');
+    const tableBody = document.querySelector('#entryTable tbody');
+
+    let entries = [];
+    let editIndex = null;
+
+    function formatDate(dateStr){
+      if(!dateStr) return '';
+      const opts = { day:'2-digit', month:'short', year:'numeric' };
+      return new Date(dateStr).toLocaleDateString('en-GB', opts);
+    }
+
+    function renderTable(){
+      tableBody.innerHTML = '';
+      entries.forEach((entry, i) => {
+        const row = document.createElement('tr');
+        if(entry.dirty) row.classList.add('dirty-row');
+        row.innerHTML = `
+          <td>${i+1}</td>
+          <td>${entry.projectType}</td>
+          <td>${entry.projectName}</td>
+          <td>${formatDate(entry.startDate)}</td>
+          <td>${entry.duration}</td>
+          <td>${entry.remarks}</td>
+          <td>${entry.editorName}</td>
+          <td>
+            <button class="btn-edit" onclick="editEntry(${i})">Edit</button>
+            ${entry.dirty 
+              ? `<button class="btn-save" onclick="saveEntry(${i})">Save</button>` 
+              : `<button class="btn-delete" onclick="deleteEntry(${i})">Delete</button>`}
+          </td>`;
+        tableBody.appendChild(row);
+      });
+    }
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form).entries());
+
+      if (editIndex !== null) {
+        entries[editIndex] = { ...data, dirty: true };
+        editIndex = null;
+      } else {
+        entries.push({ ...data, dirty: true });
+      }
+
+      form.reset();
+      form.editorName.value = "Tek Bohara";
+
+      renderTable();
+    });
+
+    window.editEntry = function(i){
+      const e = entries[i];
+      form.projectType.value = e.projectType;
+      form.projectName.value = e.projectName;
+      form.startDate.value = e.startDate;
+      form.duration.value = e.duration;
+      form.remarks.value = e.remarks;
+      form.editorName.value = e.editorName;
+      editIndex = i;
+
+      entries[i].dirty = true;
+      renderTable();
+      window.scrollTo({top:0,behavior:'smooth'});
+    }
+
+    window.saveEntry = function(i){
+      entries[i].dirty = false;
+      localStorage.setItem('videoEntries', JSON.stringify(entries));
+      alert(`Entry #${i+1} saved permanently!`);
+      renderTable();
+
+      // ✅ Clear the form after saving
+      form.reset();
+      form.editorName.value = "Tek Bohara";
+      editIndex = null;
+    }
+
+    window.deleteEntry = function(i){
+      entries.splice(i, 1);
+      localStorage.setItem('videoEntries', JSON.stringify(entries));
+      renderTable();
+      alert('Entry deleted permanently!');
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      const saved = localStorage.getItem('videoEntries');
+      if (saved) {
+        entries = JSON.parse(saved);
+      } else {
+        entries = [];
+      }
+      renderTable();
+    });
+  </script>
+</body>
+</html>
